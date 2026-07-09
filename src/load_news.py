@@ -1,0 +1,135 @@
+import requests
+import json
+import sqlite3      #importamos sqlite3 desde Python (no es un paquete)
+from datetime import datetime, UTC
+from dotenv import load_dotenv
+import os
+import smtplib
+from email.message import EmailMessage
+
+load_dotenv()
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+GMAIL_USER = os.getenv("GMAIL_USER")
+GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
+
+
+url_api = "https://newsapi.org/v2/everything"           #definimos el servicio que queremos usar de NewsAPI (se le llama endpoint)
+
+
+params = {                                          #determinamos parametros que correspondan a las noticias del mundial
+    "q": "World Cup 2026",                  
+    "language": "en",
+    "pageSize": 10,
+    "apiKey": NEWS_API_KEY    #apiKey seria nuestro "usuario" para pedirle cosas a la API
+}
+
+response = requests.get(url_api, params=params)                #enviamos la peticion
+
+print(response)
+
+
+
+
+
+
+if response.status_code == 200:
+    articles = response.json()['articles']
+    fetched_at = str(datetime.now(UTC).date())
+    
+    conn = sqlite3.connect("database/db.db")   
+    cursor = conn.cursor() 
+    
+    total_articles = len(articles)
+    #processed =
+    inserted = 0 
+    ignored = 0 
+    urls_enviadas = []
+    
+    for article in articles:
+        title = article['title']
+        source = article['source']['name']
+        description = article['description']
+        published_at = article['publishedAt']
+        url_article = article['url']
+        #print(json.dumps(article, indent=4))     
+        
+        tupla_valores = (
+            title,
+            description,
+            source,
+            published_at,
+            url_article,
+            fetched_at
+        )  
+        
+                  
+        cursor.execute("""        
+
+
+            INSERT OR IGNORE INTO raw_news (
+                title,
+                description,
+                source,
+                published_at,
+                url,
+                fetched_at
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
+            """, tupla_valores
+            )
+        
+        
+        cursor.rowcount                     #es un atributo del cursor que indica cuántas filas fueron afectadas por la última sentencia SQL que ejecutaste con ese cursor.
+        if cursor.rowcount == 1:
+            inserted += 1
+            urls_enviadas.append(url_article)
+            
+        else:
+            ignored += 1
+    
+    
+    
+    conn.commit()   
+    conn.close()              
+    
+
+    
+    #print(total_articles)
+    #print(inserted)
+    #print(ignored)
+    #print(urls_enviadas)
+    #print(len(urls_enviadas))        
+    #print('\n'.join(urls_enviadas))
+   
+    # acá empieza la lógica del correo
+    if len(urls_enviadas) >= 1:
+        
+        msg = EmailMessage()
+        
+        msg['From'] = GMAIL_USER
+        msg['To'] = GMAIL_USER
+        msg['Subject'] = 'Noticias de hoy'
+        cuerpo_mail = '\n'.join(urls_enviadas)
+        msg.set_content(cuerpo_mail)
+    
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(GMAIL_USER, GMAIL_PASSWORD)
+        #print(GMAIL_USER)
+        #print(GMAIL_PASSWORD)
+        #print('Envío el correo')
+        server.send_message(msg)
+        server.quit()
+
+
+
+
+
+
