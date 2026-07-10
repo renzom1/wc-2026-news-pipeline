@@ -3,3 +3,4 @@
 __pycache__/
 *.pyc
 Pass App.txt
+database/*.db
