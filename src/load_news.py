@@ -7,12 +7,26 @@ import os
 import smtplib
 from email.message import EmailMessage
 
+
+
 load_dotenv()
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 
 
+
+
+        
+         
+        
+
+
+
+
+
+
+#Empieza obtener_noticias()
 url_api = "https://newsapi.org/v2/everything"           #definimos el servicio que queremos usar de NewsAPI (se le llama endpoint)
 
 
@@ -34,6 +48,9 @@ print(response)
 
 if response.status_code == 200:
     articles = response.json()['articles']
+    #Fin obtener_noticias()
+    
+    #Empieza guardar_noticias()
     fetched_at = str(datetime.now(UTC).date())
     
     conn = sqlite3.connect("database/db.db")   
@@ -98,7 +115,7 @@ if response.status_code == 200:
     
     conn.commit()   
     conn.close()              
-    
+    #Fin guardar_noticias()
 
     
     #print(total_articles)
@@ -108,7 +125,7 @@ if response.status_code == 200:
     #print(len(urls_enviadas))        
     #print('\n'.join(urls_enviadas))
    
-    # acá empieza la lógica del correo
+    #Empieza preparar_correo()
     if len(urls_enviadas) >= 1:
         
         msg = EmailMessage()
@@ -118,7 +135,9 @@ if response.status_code == 200:
         msg['Subject'] = 'Noticias de hoy'
         cuerpo_mail = '\n'.join(urls_enviadas)
         msg.set_content(cuerpo_mail)
+    #Fin preparar_correo()
     
+        #Empieza enviar_correo()
         server = smtplib.SMTP("smtp.gmail.com", 587)
         server.starttls()
         server.login(GMAIL_USER, GMAIL_PASSWORD)
@@ -127,7 +146,7 @@ if response.status_code == 200:
         #print('Envío el correo')
         server.send_message(msg)
         server.quit()
-
+        #Fin enviar_correo()
 
 
 
