@@ -16,137 +16,139 @@ GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 
 
 
-
+#obtener_noticias()
+def obtener_noticias(query):
+    url_api = "https://newsapi.org/v2/everything"
+    params = {                                          #determinamos parametros que correspondan a las noticias del mundial
+    'q': query,                  
+    "language": "en",
+    "pageSize": 10,
+    "apiKey": NEWS_API_KEY    #apiKey seria nuestro "usuario" para pedirle cosas a la API
+}
+    response = requests.get(url_api, params=params)
+    
+    if response.status_code == 200:
+        articles = response.json()['articles']
+        return articles
+    
+    else:
+        raise ConnectionError("No se pudieron obtener las noticias.")
         
          
         
 
 
 
-
-
-
-#Empieza obtener_noticias()
-url_api = "https://newsapi.org/v2/everything"           #definimos el servicio que queremos usar de NewsAPI (se le llama endpoint)
-
-
-params = {                                          #determinamos parametros que correspondan a las noticias del mundial
-    "q": "World Cup 2026",                  
-    "language": "en",
-    "pageSize": 10,
-    "apiKey": NEWS_API_KEY    #apiKey seria nuestro "usuario" para pedirle cosas a la API
-}
-
-response = requests.get(url_api, params=params)                #enviamos la peticion
-
-print(response)
+#response = requests.get(url_api, params=params)                #enviamos la peticion
+noticias = obtener_noticias("World Cup 2026")
+#print(response)
+#print(len(noticias))
 
 
 
 
 
 
-if response.status_code == 200:
-    articles = response.json()['articles']
-    #Fin obtener_noticias()
+
+#Empieza guardar_noticias()
+fetched_at = str(datetime.now(UTC).date())
+
+conn = sqlite3.connect("database/db.db")   
+cursor = conn.cursor() 
+
+#total_articles = len(articles)
+#processed =
+inserted = 0 
+ignored = 0 
+urls_enviadas = []
+
+for article in noticias:
+    title = article['title']
+    source = article['source']['name']
+    description = article['description']
+    published_at = article['publishedAt']
+    url_article = article['url']
+    #print(json.dumps(article, indent=4))     
     
-    #Empieza guardar_noticias()
-    fetched_at = str(datetime.now(UTC).date())
+    tupla_valores = (
+        title,
+        description,
+        source,
+        published_at,
+        url_article,
+        fetched_at
+    )  
     
-    conn = sqlite3.connect("database/db.db")   
-    cursor = conn.cursor() 
-    
-    total_articles = len(articles)
-    #processed =
-    inserted = 0 
-    ignored = 0 
-    urls_enviadas = []
-    
-    for article in articles:
-        title = article['title']
-        source = article['source']['name']
-        description = article['description']
-        published_at = article['publishedAt']
-        url_article = article['url']
-        #print(json.dumps(article, indent=4))     
-        
-        tupla_valores = (
+                
+    cursor.execute("""        
+
+
+        INSERT OR IGNORE INTO raw_news (
             title,
             description,
             source,
             published_at,
-            url_article,
+            url,
             fetched_at
-        )  
+        )
+        VALUES (
+            ?,
+            ?,
+            ?,
+            ?,
+            ?,
+            ?
+        )
+        """, tupla_valores
+        )
+    
+    
+    cursor.rowcount                     #es un atributo del cursor que indica cuántas filas fueron afectadas por la última sentencia SQL que ejecutaste con ese cursor.
+    if cursor.rowcount == 1:
+        inserted += 1
+        urls_enviadas.append(url_article)
         
-                  
-        cursor.execute("""        
+    else:
+        ignored += 1
 
 
-            INSERT OR IGNORE INTO raw_news (
-                title,
-                description,
-                source,
-                published_at,
-                url,
-                fetched_at
-            )
-            VALUES (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            """, tupla_valores
-            )
-        
-        
-        cursor.rowcount                     #es un atributo del cursor que indica cuántas filas fueron afectadas por la última sentencia SQL que ejecutaste con ese cursor.
-        if cursor.rowcount == 1:
-            inserted += 1
-            urls_enviadas.append(url_article)
-            
-        else:
-            ignored += 1
-    
-    
-    
-    conn.commit()   
-    conn.close()              
-    #Fin guardar_noticias()
 
+conn.commit()   
+conn.close()              
+#Fin guardar_noticias()
+#print("Insertadas:", inserted)
+#print("Ignoradas:", ignored)
+#print("URLs enviadas:", urls_enviadas)
+
+#print(total_articles)
+#print(inserted)
+#print(ignored)
+#print(urls_enviadas)
+#print(len(urls_enviadas))        
+#print('\n'.join(urls_enviadas))
+
+#Empieza preparar_correo()
+if len(urls_enviadas) >= 1:
     
-    #print(total_articles)
-    #print(inserted)
-    #print(ignored)
-    #print(urls_enviadas)
-    #print(len(urls_enviadas))        
-    #print('\n'.join(urls_enviadas))
-   
-    #Empieza preparar_correo()
-    if len(urls_enviadas) >= 1:
-        
-        msg = EmailMessage()
-        
-        msg['From'] = GMAIL_USER
-        msg['To'] = GMAIL_USER
-        msg['Subject'] = 'Noticias de hoy'
-        cuerpo_mail = '\n'.join(urls_enviadas)
-        msg.set_content(cuerpo_mail)
-    #Fin preparar_correo()
+    msg = EmailMessage()
     
-        #Empieza enviar_correo()
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(GMAIL_USER, GMAIL_PASSWORD)
-        #print(GMAIL_USER)
-        #print(GMAIL_PASSWORD)
-        #print('Envío el correo')
-        server.send_message(msg)
-        server.quit()
-        #Fin enviar_correo()
+    msg['From'] = GMAIL_USER
+    msg['To'] = GMAIL_USER
+    msg['Subject'] = 'Noticias de hoy'
+    cuerpo_mail = '\n'.join(urls_enviadas)
+    msg.set_content(cuerpo_mail)
+#Fin preparar_correo()
+
+    #Empieza enviar_correo()
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(GMAIL_USER, GMAIL_PASSWORD)
+    #print(GMAIL_USER)
+    #print(GMAIL_PASSWORD)
+    #print('Envío el correo')
+    server.send_message(msg)
+    server.quit()
+    #Fin enviar_correo()
 
 
 
