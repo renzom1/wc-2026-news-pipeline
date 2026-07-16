@@ -2,6 +2,7 @@ import requests
 import json
 import sqlite3      #importamos sqlite3 desde Python (no es un paquete)
 from datetime import datetime, UTC
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 import os
 import smtplib
@@ -16,33 +17,40 @@ GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 
 
 
-#obtener_noticias()
-def obtener_noticias(query):
+#obtener_noticias() 
+def obtener_noticias(query, desde, hasta):
     url_api = "https://newsapi.org/v2/everything"
     params = {                                          #determinamos parametros que correspondan a las noticias del mundial
-    'q': query,                  
+    "q": query,                  
     "language": "en",
     "pageSize": 10,
-    "apiKey": NEWS_API_KEY    #apiKey seria nuestro "usuario" para pedirle cosas a la API
+    "apiKey": NEWS_API_KEY,    #apiKey seria nuestro "usuario" para pedirle cosas a la API
+    "from": desde.isoformat(),
+    "to": hasta.isoformat(),
+    "sortBy": "publishedAt"
 }
     response = requests.get(url_api, params=params)
     
     if response.status_code == 200:
         articles = response.json()['articles']
         return articles
+        
     
     else:
         raise ConnectionError("No se pudieron obtener las noticias.")
-        
-         
-        
+    
+    
+zona_local = ZoneInfo("America/Argentina/Buenos_Aires")
+hasta = datetime.now(zona_local)
+desde = hasta.replace(
+    hour = 0,
+    minute = 0,
+    second = 0,
+    microsecond = 0
+)
+noticias = obtener_noticias("Argentina", desde, hasta)
 
 
-
-#response = requests.get(url_api, params=params)                #enviamos la peticion
-noticias = obtener_noticias("World Cup 2026")
-#print(response)
-#print(len(noticias))
 
 
 
@@ -51,7 +59,7 @@ noticias = obtener_noticias("World Cup 2026")
 
 
 #Empieza guardar_noticias()
-fetched_at = str(datetime.now(UTC).date())
+fetched_at = datetime.now(zona_local).isoformat()
 
 conn = sqlite3.connect("database/db.db")   
 cursor = conn.cursor() 
@@ -110,6 +118,11 @@ for article in noticias:
         
     else:
         ignored += 1
+    
+    #print(url_article)
+    #print(published_at)
+    #print(title)
+    
 
 
 
