@@ -27,8 +27,6 @@ def obtener_noticias(query, desde, hasta):
     "apiKey": NEWS_API_KEY,    #apiKey seria nuestro "usuario" para pedirle cosas a la API
     "from": desde.isoformat(),
     "to": hasta.isoformat(),
-    #"from" : "2026-07-16T00:00:00",
-    #"to" : "2026-07-17T23:59:59",
     "sortBy": "publishedAt"
 }
     response = requests.get(url_api, params=params)
@@ -56,7 +54,7 @@ def guardar_noticias(lista_noticias, fetched_at):
         description = article['description']
         published_at = article['publishedAt']
         url_article = article['url']
-        #print(json.dumps(article, indent=4))     
+        
         
         tupla_valores = (
             title,
@@ -66,8 +64,8 @@ def guardar_noticias(lista_noticias, fetched_at):
             url_article,
             fetched_at
         )  
-        
-                    
+                  
+                  
         cursor.execute("""        
 
             INSERT OR IGNORE INTO raw_news (

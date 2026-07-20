@@ -1,10 +1,10 @@
 # WC 2026 News Pipeline
 
 ## Objetivo
-Desarrollé este proyecto con fines educativos para aprender conceptos fundamentales de Data Engineering, mediante la construcción de un pipeline de datos completo. A lo largo del desarrollo se trabajó con consumo de APIs, almacenamiento en bases de datos, deduplicación de datos, automatización de tareas, gestión de credenciales mediante variables de entorno y control de versiones con Git.
+Desarrollé este proyecto con fines educativos, para aprender conceptos fundamentales de Data Engineering mediante la construcción de un pipeline de datos completo. A lo largo del desarrollo se trabajó con consumo de APIs, almacenamiento en bases de datos, deduplicación de datos, automatización de tareas, gestión de credenciales mediante variables de entorno y control de versiones con Git.
 
 ## Descripción
-Consiste en un pipeline automatizado que consulta periódicamente NewsAPI para obtener noticias sobre la Copa Mundial de la FIFA 2026. Las almacena y evita duplicados mediante SQLite y envía por correo electrónico únicamente las noticias nuevas.
+Consiste en un pipeline automatizado que consulta periódicamente NewsAPI para obtener noticias sobre la Copa Mundial de la FIFA 2026. Las almacena y evita duplicados mediante SQLite, y envía por correo electrónico únicamente las noticias nuevas.
 
 ## Arquitectura
 ```mermaid
@@ -13,6 +13,17 @@ flowchart TD
     B --> C[(SQLite)]
     B --> D[Email]
 ```
+
+
+## Conceptos de Data Engineering aplicados
+
+- Consumo de APIs REST
+- Pipeline ETL
+- Persistencia en SQLite
+- Deduplicación mediante restricciones UNIQUE
+- Automatización con Windows Task Scheduler
+- Gestión de credenciales mediante variables de entorno
+- Refactorización del código y separación de responsabilidades
 
 
 ## Tecnologías utilizadas
@@ -53,12 +64,6 @@ Windows:
 .venv\Scripts\activate
 ```
 
-4. Instalar las dependencias.
-
-```bash
-pip install -r requirements.txt
-```
-
 Linux/macOS:
 
 ```bash
@@ -72,7 +77,6 @@ pip install -r requirements.txt
 ```
 
 
-
 ## Configuración
 
 El proyecto utiliza variables de entorno para almacenar credenciales y configuraciones sensibles.
@@ -83,9 +87,9 @@ Antes de ejecutar el pipeline, crear un archivo `.env` en la raíz del proyecto 
 El archivo debe contener las siguientes variables:
 
 ```env
-NEWS_API_KEY=tu_api_key
-EMAIL_USER=tu_correo
-EMAIL_PASSWORD=tu_password_de_aplicacion
+NEWS_API_KEY=api_key
+EMAIL_USER=correo
+EMAIL_PASSWORD=password_de_aplicacion
 ```
 
 Estas variables son cargadas automáticamente mediante `python-dotenv`.
@@ -96,7 +100,7 @@ El archivo `.env` no debe ser incluido en el control de versiones.
 
 ## Ejecución
 
-### Ejecución manual
+### Manual
 
 Desde la carpeta raíz del proyecto, con el entorno virtual activado:
 
@@ -109,9 +113,9 @@ El pipeline realizará las siguientes tareas:
 - Consulta la API de noticias.
 - Procesa los artículos obtenidos.
 - Almacena las noticias nuevas en SQLite.
-- Envía por correo electrónico las noticias incorporadas.
+- Envía un correo con las URLs de las noticias incorporadas.
 
-### Ejecución automatizada
+### Automatizada
 
 El pipeline puede ejecutarse automáticamente mediante el Programador de tareas de Windows.
 
@@ -144,3 +148,12 @@ WC-NEWS-PIPELINE/
 ```
 
 ## Mejoras futuras
+
+En el corto-medio plazo, planeo refinar el proyecto de la siguiente manera:
+
+- Incorporar logging estructurado.
+- Mejorar el manejo de excepciones.
+- Dockerizar el pipeline.
+- Migrar SQLite a PostgreSQL.
+- Incorporar pruebas automatizadas.
+- Desplegar el pipeline en un entorno cloud.
