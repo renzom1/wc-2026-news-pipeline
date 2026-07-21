@@ -592,4 +592,226 @@ A partir de ahí aparecerán conceptos importantes como:
 - Insertar múltiples noticias automáticamente.
 - Verificar cuántas noticias fueron realmente almacenadas.
 
-Será la primera vez que trabajemos con datos reales del Mundial 2026 en lugar de ejemplos inventados.
+
+---
+
+# Evolución del proyecto
+
+## Primera versión funcional
+
+La primera versión funcional del pipeline tenía un flujo secuencial dentro del script principal:
+
+```text
+Obtención de noticias
+        ↓
+Procesamiento
+        ↓
+Inserción en SQLite
+        ↓v     
+Preparación del correo
+        ↓
+Envío
+```
+
+
+
+
+## Refactorización del pipeline
+
+### Situación inicial
+
+La primera versión del script tenía un flujo completamente secuencial: las instrucciones se ejecutaban a medida que Python recorría el archivo.
+
+Aunque funcionaba, dificultaba la organización y la reutilización del código.
+
+---
+
+### Decisión tomada
+
+Se reorganizó el pipeline separando responsabilidades en funciones:
+
+```text
+obtener_noticias()
+        ↓
+guardar_noticias()
+        ↓
+preparar_correo()
+        ↓
+enviar_correo()
+```
+
+
+---
+
+## Incorporación de main()
+
+Luego de la refactorización se incorporó una función principal:
+
+```python
+def main():
+```
+
+encargada de coordinar el flujo completo del pipeline.
+
+Conceptualmente:
+
+```text
+main()
+
+    ↓
+
+configuración del entorno
+
+    ↓
+
+extracción de noticias
+
+    ↓
+
+almacenamiento
+
+    ↓
+
+decisión de envío de correo
+```
+
+La función `main()` funciona como punto central de coordinación, mientras que las demás funciones contienen la lógica específica de cada etapa.
+
+---
+
+## Punto de entrada del programa
+
+Se incorporó:
+
+```python
+if __name__ == "__main__":
+    main()
+```
+
+Este bloque permite diferenciar entre dos formas de utilizar el archivo Python.
+
+### Ejecución directa
+
+Cuando el archivo se ejecuta directamente:
+
+```bash
+python src/load_news.py
+```
+
+se inicia el pipeline completo mediante la llamada a:
+
+```python
+main()
+```
+
+---
+
+### Importación como módulo
+
+Si el archivo es importado:
+
+```python
+import load_news
+```
+
+Python carga las funciones disponibles, pero no ejecuta automáticamente el pipeline.
+
+Esto permite reutilizar funciones individuales sin iniciar todo el flujo de procesamiento.
+
+---
+
+## Gestión de credenciales mediante variables de entorno
+
+Se incorporó el uso de variables de entorno mediante `python-dotenv`.
+
+Las credenciales sensibles:
+
+```text
+NEWS_API_KEY
+GMAIL_USER
+GMAIL_PASSWORD
+```
+
+se almacenan fuera del código fuente.
+
+El archivo:
+
+```text
+.env
+```
+
+contiene los valores reales, mientras que:
+
+```text
+.env.example
+```
+
+funciona como plantilla para indicar las variables necesarias para ejecutar el proyecto.
+
+Esta separación permite:
+
+- evitar exponer información sensible;
+- facilitar la configuración por otros usuarios;
+- mantener configuraciones diferentes según el entorno.
+
+---
+
+## Automatización del pipeline
+
+El pipeline fue configurado para ejecutarse automáticamente mediante Windows Task Scheduler.
+
+La tarea programada utiliza:
+
+- el intérprete de Python perteneciente al entorno virtual del proyecto;
+- el script principal del pipeline.
+
+Flujo conceptual:
+
+```text
+Windows Task Scheduler
+
+        ↓
+
+Entorno virtual Python
+
+        ↓
+
+Pipeline ETL
+
+        ↓
+
+SQLite + Email
+```
+
+La automatización permite ejecutar el proceso diariamente sin intervención manual.
+
+---
+
+## Estado actual del proyecto
+
+Actualmente el pipeline permite:
+
+- ✅ Consumir una API REST real.
+- ✅ Procesar respuestas JSON.
+- ✅ Extraer campos relevantes de noticias.
+- ✅ Transformar datos antes del almacenamiento.
+- ✅ Guardar información en SQLite.
+- ✅ Evitar duplicados mediante restricciones UNIQUE.
+- ✅ Implementar inserciones idempotentes.
+- ✅ Gestionar credenciales mediante variables de entorno.
+- ✅ Separar responsabilidades mediante funciones.
+- ✅ Automatizar la ejecución del pipeline.
+
+---
+
+## Próximos pasos
+
+Las siguientes mejoras previstas son:
+
+- Incorporar logging estructurado.
+- Mejorar manejo de excepciones.
+- Agregar pruebas automatizadas.
+- Dockerizar el pipeline.
+- Migrar SQLite a PostgreSQL.
+- Desplegar el pipeline en un entorno cloud.
+- Incorporar consultas SQL para análisis de noticias.
